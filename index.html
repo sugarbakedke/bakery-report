@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Daily Bakery Report</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f7f4ef; --surface: #ffffff; --border: #e2ddd6; --border-strong: #c8c0b4;
+  --text: #1a1714; --text-muted: #6b6560; --text-hint: #a09890;
+  --accent: #b55c1a; --accent-light: #f5ebe0; --accent-dark: #8a3e0e;
+  --radius: 8px; --radius-lg: 12px;
+}
+html { font-size: 16px; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 2rem 1rem 4rem; }
+.page-header { max-width: 720px; margin: 0 auto 2rem; display: flex; align-items: center; gap: 14px; }
+.logo { width: 48px; height: 48px; background: var(--accent); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; flex-shrink: 0; }
+.page-header h1 { font-size: 22px; font-weight: 600; }
+.page-header p { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+.progress-wrap { max-width: 720px; margin: 0 auto 1.5rem; }
+.progress-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--accent); border-radius: 2px; width: 0%; transition: width 0.4s; }
+.progress-label { font-size: 12px; color: var(--text-hint); margin-top: 6px; text-align: right; }
+#main-form { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.card-header { padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--accent-light); display: flex; align-items: center; gap: 10px; }
+.card-header i { font-size: 16px; color: var(--accent); }
+.card-header h2 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--accent-dark); }
+.card-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.field input[type="text"], .field input[type="number"], .field input[type="date"], .field input[type="time"], .field select, .field textarea {
+  width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+  font-size: 14px; color: var(--text); background: #fff; font-family: inherit; transition: border-color 0.15s; appearance: none;
+}
+.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px #b55c1a18; }
+.field textarea { min-height: 80px; resize: vertical; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 540px) { .grid-2 { grid-template-columns: 1fr; } }
+.chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { padding: 6px 14px; font-size: 13px; border: 1.5px solid var(--border); border-radius: 20px; background: #fff; color: var(--text-muted); cursor: pointer; transition: all 0.15s; font-family: inherit; }
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+.chip.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent-dark); font-weight: 600; }
+.subhead { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-hint); padding-bottom: 6px; border-bottom: 1px solid var(--border); margin-top: 4px; }
+.prod-table { width: 100%; border-collapse: collapse; }
+.prod-table th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-hint); padding: 4px 6px 8px; text-align: center; }
+.prod-table th:first-child { text-align: left; }
+.prod-table td { padding: 4px 6px; vertical-align: middle; }
+.prod-table td:first-child { font-size: 13px; color: var(--text); padding-left: 0; }
+.prod-table td input { width: 76px; text-align: center; padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; font-family: inherit; background: #fff; transition: border-color 0.15s; }
+.prod-table td input:focus { outline: none; border-color: var(--accent); }
+.prod-table tr:not(:last-child) td { border-bottom: 1px solid #f0ece6; }
+@media (max-width: 480px) { .prod-table td input { width: 58px; } }
+.toggle-row { display: flex; gap: 8px; }
+.toggle-btn { padding: 7px 18px; font-size: 13px; font-weight: 500; border: 1.5px solid var(--border); border-radius: var(--radius); background: #fff; color: var(--text-muted); cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+.toggle-btn.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent-dark); font-weight: 600; }
+.cond { display: none; flex-direction: column; gap: 12px; margin-top: 4px; }
+.cond.show { display: flex; }
+.cb-list { display: flex; flex-direction: column; gap: 6px; }
+.cb-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: var(--radius); border: 1px solid transparent; cursor: pointer; transition: all 0.15s; }
+.cb-item:hover { background: var(--accent-light); }
+.cb-item.checked { background: var(--accent-light); border-color: #c8834a44; }
+.cb-item input[type="checkbox"] { display: none; }
+.cb-box { width: 17px; height: 17px; border: 1.5px solid var(--border-strong); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.cb-item.checked .cb-box { background: var(--accent); border-color: var(--accent); }
+.cb-check { font-size: 10px; color: #fff; display: none; }
+.cb-item.checked .cb-check { display: block; }
+.cb-label { font-size: 13px; color: var(--text); }
+.cb-item.checked .cb-label { color: var(--accent-dark); font-weight: 500; }
+.order-block { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px; margin-bottom: 10px; }
+.order-block-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.order-badge { font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.04em; }
+.remove-btn { background: none; border: none; cursor: pointer; color: var(--text-hint); font-size: 16px; padding: 2px; display: flex; align-items: center; transition: color 0.15s; }
+.remove-btn:hover { color: #c0392b; }
+.add-btn { width: 100%; padding: 9px; background: transparent; border: 1.5px dashed var(--border-strong); border-radius: var(--radius); color: var(--text-muted); font-size: 13px; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.15s; margin-top: 4px; }
+.add-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.submit-bar { max-width: 720px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.submit-note { font-size: 12px; color: var(--text-hint); display: flex; align-items: center; gap: 6px; }
+.submit-btn { padding: 11px 28px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 8px; transition: background 0.15s, transform 0.1s; }
+.submit-btn:hover { background: var(--accent-dark); }
+.submit-btn:active { transform: scale(0.98); }
+.success-screen { display: none; max-width: 720px; margin: 4rem auto; text-align: center; flex-direction: column; align-items: center; gap: 20px; }
+.success-screen.show { display: flex; }
+.success-icon { width: 64px; height: 64px; border-radius: 50%; background: #e8f5e9; border: 2px solid #4caf50; display: flex; align-items: center; justify-content: center; font-size: 28px; color: #2e7d32; }
+.success-screen h2 { font-size: 24px; font-weight: 600; }
+.success-screen p { font-size: 15px; color: var(--text-muted); line-height: 1.6; }
+.restart-btn { padding: 10px 24px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+.restart-btn:hover { background: var(--accent-dark); }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="logo"><i class="ti ti-bread"></i></div>
+  <div>
+    <h1>Daily Bakery Report</h1>
+    <p>End-of-shift production &amp; operations summary</p>
+  </div>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+  <div class="progress-label" id="prog-label">Scroll to fill in all sections</div>
+</div>
+
+<div id="main-form">
+
+  <div class="card">
+    <div class="card-header"><i class="ti ti-users"></i><h2>Part 1 — Shift &amp; Staff Details</h2></div>
+    <div class="card-body">
+      <div class="field">
+        <label>Location *</label>
+        <div class="chip-group" id="loc-chips">
+          <button type="button" class="chip" onclick="pickChip(this,'loc')">Loresho</button>
+          <button type="button" class="chip" onclick="pickChip(this,'loc')">Baba Dogo</button>
+          <button type="button" class="chip" onclick="pickChip(this,'loc');showEl('loc-other')">Other</button>
+        </div>
+        <div id="loc-other" style="display:none;margin-top:8px"><input type="text" placeholder="Enter location name…" /></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Date *</label><input type="date" id="f-date" oninput="updateProgress()" /></div>
+        <div class="field">
+          <label>Shift *</label>
+          <div class="chip-group">
+            <button type="button" class="chip" onclick="pickChip(this,'shift')">Morning</button>
+            <button type="button" class="chip" onclick="pickChip(this,'shift')">Afternoon</button>
+            <button type="button" class="chip" onclick="pickChip(this,'shift')">Evening</button>
+            <button type="button" class="chip" onclick="pickChip(this,'shift')">Night</button>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Day *</label>
+        <div class="chip-group" id="day-chips">
+          <button type="button" class="chip" onclick="pickChip(this,'day')">Mon</button>
+          <button type="button" class="chip" onclick="pickChip(this,'day')">Tue</button>
+          <button type="button" class="chip" onclick="pickChip(this,'day')">Wed</button>
+          <button type="button" class="chip" onclick="pickChip(this,'day')">Thu</button>
+          <button type="button" class="chip" onclick="pickChip(this,'day')">Fri</button>
+          <button type="button" class="chip" onclick="pickChip(this,'day')">Sat</button>
+          <button type="button" class="chip" onclick="pickChip(this,'day')">Sun</button>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Supervisor / Lead Baker</label><input type="text" placeholder="Full name" /></div>
+        <div class="field"><label>Total Headcount</label><input type="number" min="1" placeholder="e.g. 6" /></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><i class="ti ti-chart-bar"></i><h2>Part 2 — Production Summary</h2></div>
+    <div class="card-body">
+      <div class="subhead">Breads &amp; Pastries</div>
+      <table class="prod-table"><thead><tr><th>Item</th><th>Produced</th><th>Defective</th></tr></thead><tbody id="prod-breads"></tbody></table>
+      <div class="subhead">Cakes</div>
+      <table class="prod-table"><thead><tr><th>Item</th><th>Produced</th><th>Defective</th></tr></thead><tbody id="prod-cakes"></tbody></table>
+      <div class="subhead">Cookies</div>
+      <table class="prod-table"><thead><tr><th>Item</th><th>Produced</th><th>Defective</th></tr></thead><tbody id="prod-cookies"></tbody></table>
+      <div class="subhead">Muffins</div>
+      <table class="prod-table"><thead><tr><th>Item</th><th>Produced</th><th>Defective</th></tr></thead><tbody id="prod-muffins"></tbody></table>
+      <div class="subhead">Brownies</div>
+      <table class="prod-table"><thead><tr><th>Item</th><th>Produced</th><th>Defective</th></tr></thead><tbody id="prod-brownies"></tbody></table>
+      <div class="subhead">Cupcakes</div>
+      <table class="prod-table"><thead><tr><th>Item</th><th>Produced</th><th>Defective</th></tr></thead><tbody id="prod-cupcakes"></tbody></table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><i class="ti ti-coin"></i><h2>Part 3 — Sales &amp; Revenue Tracking</h2></div>
+    <div class="card-body">
+      <div class="grid-2">
+        <div class="field"><label>Total Transactions</label><input type="number" min="0" placeholder="e.g. 142" /></div>
+        <div class="field"><label>Walk-in Customers</label><input type="number" min="0" placeholder="e.g. 98" /></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Best-Selling Item</label><select id="best-sel"><option value="">Select…</option></select></div>
+        <div class="field"><label>Slowest-Selling Item</label><select id="slow-sel"><option value="">Select…</option></select></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><i class="ti ti-clipboard-x"></i><h2>Part 3B — Orders Not Taken</h2></div>
+    <div class="card-body">
+      <div class="field">
+        <label>Were any orders not taken?</label>
+        <div class="toggle-row">
+          <button type="button" class="toggle-btn" onclick="pickToggle(this,'oyn');document.getElementById('orders-sec').classList.add('show')">Yes</button>
+          <button type="button" class="toggle-btn" onclick="pickToggle(this,'oyn');document.getElementById('orders-sec').classList.remove('show')">No</button>
+        </div>
+      </div>
+      <div class="cond" id="orders-sec">
+        <div class="field"><label>Total Orders Not Taken</label><input type="number" min="0" id="orders-count" placeholder="0" /></div>
+        <div id="order-blocks"></div>
+        <button type="button" class="add-btn" onclick="addOrder()"><i class="ti ti-plus"></i> Log an order not taken</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><i class="ti ti-archive"></i><h2>Part 4 — Inventory &amp; Waste</h2></div>
+    <div class="card-body">
+      <div class="subhead">Breads &amp; Pastries</div>
+      <table class="prod-table"><thead><tr><th>Item</th><th>Sold</th><th>Unsold</th><th>Spoilt</th></tr></thead><tbody id="inv-breads"></tbody></table>
+      <div class="subhead">Cakes</div>
+      <table class="prod-table"><thead><tr><th>Item</th><th>Sold</th><th>Unsold</th><th>Spoilt</th></tr></thead><tbody id="inv-cakes"></tbody></table>
+      <div class="subhead">Cookies</div>
+      <table class="prod-table"><thead><tr><th>Item</th><th>Sold</th><th>Unsold</th><th>Spoilt</th></tr></thead><tbody id="inv-cookies"></tbody></table>
+      <div class="subhead">Muffins</div>
+      <table class="prod-table"><thead><tr><th>Item</th><th>Sold</th><th>Unsold</th><th>Spoilt</th></tr></thead><tbody id="inv-muffins"></tbody></table>
+      <div class="subhead">Brownies</div>
+      <table class="prod-table"><thead><tr><th>Item</th><th>Sold</th><th>Unsold</th><th>Spoilt</th></tr></thead><tbody id="inv-brownies"></tbody></table>
+      <div class="subhead">Cupcakes</div>
+      <table class="prod-table"><thead><tr><th>Item</th><th>Sold</th><th>Unsold</th><th>Spoilt</th></tr></thead><tbody id="inv-cupcakes"></tbody></table>
+      <div class="field" style="margin-top:8px">
+        <label>Primary Reason for Unsold Goods</label>
+        <div class="chip-group">
+          <button type="button" class="chip" onclick="pickChip(this,'unsold')">Overproduction</button>
+          <button type="button" class="chip" onclick="pickChip(this,'unsold')">Weather</button>
+          <button type="button" class="chip" onclick="pickChip(this,'unsold')">Low foot traffic</button>
+          <button type="button" class="chip" onclick="pickChip(this,'unsold')">Other</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Ingredient Shortages for Tomorrow?</label>
+        <div class="toggle-row">
+          <button type="button" class="toggle-btn" onclick="pickToggle(this,'syn');document.getElementById('shortage-sec').classList.add('show')">Yes</button>
+          <button type="button" class="toggle-btn" onclick="pickToggle(this,'syn');document.getElementById('shortage-sec').classList.remove('show')">No</button>
+        </div>
+      </div>
+      <div class="cond" id="shortage-sec">
+        <div class="cb-list" id="shortage-list"></div>
+        <button type="button" class="add-btn" onclick="addIngredient()"><i class="ti ti-plus"></i> Add another ingredient</button>
+        <div class="field"><label>Shortage Notes</label><textarea placeholder="Quantities needed, urgency, supplier info…"></textarea></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><i class="ti ti-tool"></i><h2>Part 5 — Equipment, Safety &amp; Cleanliness</h2></div>
+    <div class="card-body">
+      <div class="field">
+        <label>Equipment Malfunctions This Shift?</label>
+        <div class="toggle-row">
+          <button type="button" class="toggle-btn" onclick="pickToggle(this,'eyn');document.getElementById('equip-sec').classList.add('show')">Yes</button>
+          <button type="button" class="toggle-btn" onclick="pickToggle(this,'eyn');document.getElementById('equip-sec').classList.remove('show')">No</button>
+        </div>
+      </div>
+      <div class="cond" id="equip-sec">
+        <div class="field"><label>Describe the Malfunction</label><textarea placeholder="Which equipment, what happened…"></textarea></div>
+      </div>
+      <div class="field">
+        <label>Health &amp; Safety Checklist Passed?</label>
+        <div class="toggle-row">
+          <button type="button" class="toggle-btn" onclick="pickToggle(this,'hyn')">Yes</button>
+          <button type="button" class="toggle-btn" onclick="pickToggle(this,'hyn')">No</button>
+        </div>
+      </div>
+      <div class="field"><label>Additional Notes / Customer Feedback</label><textarea placeholder="Complaints, compliments, unusual incidents…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><i class="ti ti-send"></i><h2>Submission</h2></div>
+    <div class="card-body">
+      <div class="grid-2">
+        <div class="field"><label>Submitted By *</label><input type="text" id="f-submitter" placeholder="Your full name" /></div>
+        <div class="field"><label>Time of Submission</label><input type="time" id="f-time" /></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="submit-bar">
+    <span class="submit-note"><i class="ti ti-lock" style="font-size:14px"></i> Responses saved locally</span>
+    <button type="button" class="submit-btn" onclick="submitForm()"><i class="ti ti-check"></i> Submit Report</button>
+  </div>
+</div>
+
+<div class="success-screen" id="success-screen">
+  <div class="success-icon"><i class="ti ti-check"></i></div>
+  <h2>Report submitted!</h2>
+  <p>Today's shift report has been recorded.<br>Have a great rest of your day.</p>
+  <button class="restart-btn" onclick="restartForm()">Submit another report</button>
+</div>
+
+<script>
+const BREADS   = ['Brioche','Croissants','Cake Slices','Cinnamon Rolls','Apple Scones'];
+const CAKES    = ['Cakes'];
+const COOKIES  = ['Cookies'];
+const MUFFINS  = ['Chocolate Muffins','Blueberry Muffins'];
+const BROWNIES = ['Chocolate Brownies','Caramel Brownies'];
+const CUPCAKES = ['Strawberry Cupcakes','Passion Cupcakes','Choc. Fudge Cupcakes','Choc. Salted Caramel Cupcakes','Vanilla SC Cupcakes','Lemon Blueberry Cupcakes'];
+const ALL_ITEMS = [...BREADS,...CAKES,...COOKIES,...MUFFINS,...BROWNIES,...CUPCAKES];
+const INGREDIENTS = ['All-purpose flour','Unsalted butter','Eggs','Whole milk','Caster sugar','Baking powder','Cocoa powder','Vanilla extract','Heavy cream','Cream cheese','Yeast','Salt','Caramel sauce','Fresh blueberries','Fresh strawberries','Lemon zest / juice','Cinnamon','Icing sugar','Dark chocolate','Apples'];
+let orderCount = 0;
+
+function buildProd(id, items) {
+  const tb = document.getElementById(id);
+  items.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>'+item+'</td><td><input type="number" min="0" placeholder="0"></td><td><input type="number" min="0" placeholder="0"></td>';
+    tb.appendChild(tr);
+  });
+}
+function buildInv(id, items) {
+  const tb = document.getElementById(id);
+  items.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>'+item+'</td><td><input type="number" min="0" placeholder="0"></td><td><input type="number" min="0" placeholder="0"></td><td><input type="number" min="0" placeholder="0"></td>';
+    tb.appendChild(tr);
+  });
+}
+function buildSelects() {
+  const groups = {'Breads & Pastries':BREADS,'Cakes':CAKES,'Cookies':COOKIES,'Muffins':MUFFINS,'Brownies':BROWNIES,'Cupcakes':CUPCAKES};
+  ['best-sel','slow-sel'].forEach(id => {
+    const sel = document.getElementById(id);
+    Object.entries(groups).forEach(([g,items]) => {
+      const og = document.createElement('optgroup'); og.label = g;
+      items.forEach(i => { const o = document.createElement('option'); o.textContent = i; og.appendChild(o); });
+      sel.appendChild(og);
+    });
+  });
+}
+function buildShortages() {
+  const el = document.getElementById('shortage-list');
+  INGREDIENTS.forEach(ing => {
+    const lbl = document.createElement('label'); lbl.className = 'cb-item';
+    lbl.innerHTML = '<input type="checkbox"><div class="cb-box"><span class="cb-check"><i class="ti ti-check"></i></span></div><span class="cb-label">'+ing+'</span>';
+    lbl.querySelector('input').addEventListener('change', function(){ lbl.classList.toggle('checked',this.checked); });
+    el.appendChild(lbl);
+  });
+}
+function addIngredient() {
+  const el = document.getElementById('shortage-list');
+  const lbl = document.createElement('label'); lbl.className = 'cb-item';
+  lbl.innerHTML = '<input type="checkbox"><div class="cb-box"><span class="cb-check"><i class="ti ti-check"></i></span></div><input type="text" placeholder="Ingredient name…" style="flex:1;padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit">';
+  lbl.querySelector('input[type="checkbox"]').addEventListener('change', function(){ lbl.classList.toggle('checked',this.checked); });
+  el.appendChild(lbl);
+}
+function addOrder() {
+  orderCount++;
+  const n = orderCount;
+  const iOpts = ALL_ITEMS.map(i=>'<option>'+i+'</option>').join('')+'<option>Other / Custom</option>';
+  const rOpts = ['Out of stock','Ingredient unavailable','Too short notice','Outside operating hours','Customer cancelled','Dietary req. unmet','Pricing disagreement','Other'].map(o=>'<option>'+o+'</option>').join('');
+  const cOpts = ['Walk-in','Phone call','WhatsApp','Online / website','Third-party delivery','Other'].map(o=>'<option>'+o+'</option>').join('');
+  const div = document.createElement('div'); div.className='order-block'; div.id='ob-'+n;
+  div.innerHTML='<div class="order-block-head"><span class="order-badge">Order not taken #'+n+'</span><button type="button" class="remove-btn" onclick="document.getElementById(\'ob-'+n+'\').remove();updateOrderCount()" aria-label="Remove"><i class="ti ti-x"></i></button></div><div class="grid-2" style="gap:10px"><div class="field"><label>Item Requested</label><select><option value="">Select…</option>'+iOpts+'</select></div><div class="field"><label>Quantity</label><input type="number" min="1" placeholder="e.g. 12"></div><div class="field"><label>Reason</label><select><option value="">Select…</option>'+rOpts+'</select></div><div class="field"><label>Channel</label><select><option value="">Select…</option>'+cOpts+'</select></div></div><div class="field" style="margin-top:10px"><label>Notes</label><input type="text" placeholder="Any additional details…"></div>';
+  document.getElementById('order-blocks').appendChild(div);
+  updateOrderCount();
+}
+function updateOrderCount() {
+  document.getElementById('orders-count').value = document.getElementById('order-blocks').children.length || '';
+}
+function pickChip(btn, grp) {
+  btn.closest('.chip-group').querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  if (grp==='loc' && btn.textContent.trim()==='Other') document.getElementById('loc-other').style.display='block';
+  else if (grp==='loc') document.getElementById('loc-other').style.display='none';
+  updateProgress();
+}
+function pickToggle(btn, grp) {
+  btn.closest('.toggle-row').querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function showEl(id) { document.getElementById(id).style.display='block'; }
+function updateProgress() {
+  const checks = [
+    !!document.querySelector('#loc-chips .chip.active'),
+    !!document.getElementById('f-date').value,
+    !!document.querySelector('#day-chips .chip.active')
+  ];
+  const pct = Math.round((checks.filter(Boolean).length / checks.length) * 100);
+  document.getElementById('prog-fill').style.width = pct+'%';
+  document.getElementById('prog-label').textContent = pct === 100 ? 'All required fields filled' : pct+'% of required fields complete';
+}
+function submitForm() {
+  if (!document.getElementById('f-submitter').value.trim()) { alert('Please enter your name before submitting.'); return; }
+  document.getElementById('main-form').style.display='none';
+  document.getElementById('success-screen').classList.add('show');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function restartForm() {
+  orderCount=0;
+  document.getElementById('order-blocks').innerHTML='';
+  document.getElementById('success-screen').classList.remove('show');
+  document.getElementById('main-form').style.display='flex';
+  document.querySelectorAll('.chip,.toggle-btn').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.cond').forEach(el=>el.classList.remove('show'));
+  document.querySelectorAll('input[type="text"],input[type="number"],input[type="time"],textarea').forEach(el=>el.value='');
+  document.querySelectorAll('select').forEach(el=>el.selectedIndex=0);
+  document.querySelectorAll('.cb-item').forEach(el=>{ el.classList.remove('checked'); const cb=el.querySelector('input[type="checkbox"]'); if(cb) cb.checked=false; });
+  document.getElementById('loc-other').style.display='none';
+  init();
+}
+function autoDay() {
+  const d = new Date().getDay(); const idx = d===0?6:d-1;
+  const chips = document.querySelectorAll('#day-chips .chip');
+  if(chips[idx]) chips[idx].classList.add('active');
+}
+function init() {
+  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('f-time').value = new Date().toTimeString().slice(0,5);
+  autoDay(); updateProgress();
+}
+buildProd('prod-breads',BREADS); buildProd('prod-cakes',CAKES); buildProd('prod-cookies',COOKIES);
+buildProd('prod-muffins',MUFFINS); buildProd('prod-brownies',BROWNIES); buildProd('prod-cupcakes',CUPCAKES);
+buildInv('inv-breads',BREADS); buildInv('inv-cakes',CAKES); buildInv('inv-cookies',COOKIES);
+buildInv('inv-muffins',MUFFINS); buildInv('inv-brownies',BROWNIES); buildInv('inv-cupcakes',CUPCAKES);
+buildSelects(); buildShortages(); init();
+</script>
+</body>
+</html>
