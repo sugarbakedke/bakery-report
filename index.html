@@ -377,11 +377,116 @@ function updateProgress() {
   document.getElementById('prog-fill').style.width = pct+'%';
   document.getElementById('prog-label').textContent = pct === 100 ? 'All required fields filled' : pct+'% of required fields complete';
 }
+const SHEET_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+
+function collectData() {
+  const loc = document.querySelector('#loc-chips .chip.active');
+  const locVal = loc ? (loc.textContent.trim() === 'Other' ? (document.querySelector('#loc-other input')||{value:''}).value : loc.textContent.trim()) : '';
+  const day = document.querySelector('#day-chips .chip.active');
+  const shiftChips = document.querySelectorAll('.chip-group');
+  let shiftVal = '';
+  shiftChips.forEach(grp => { const a = grp.querySelector('.chip.active'); if(a && ['Morning','Afternoon','Evening','Night'].includes(a.textContent.trim())) shiftVal = a.textContent.trim(); });
+
+  const prodData = {};
+  ['breads','cakes','cookies','muffins','brownies','cupcakes'].forEach(group => {
+    const rows = document.getElementById('prod-'+group)?.querySelectorAll('tr') || [];
+    rows.forEach(row => {
+      const cells = row.querySelectorAll('td');
+      if(cells.length >= 3) {
+        const name = cells[0].textContent.trim();
+        prodData[name+' Produced'] = cells[1].querySelector('input')?.value || '0';
+        prodData[name+' Defective'] = cells[2].querySelector('input')?.value || '0';
+      }
+    });
+  });
+
+  const invData = {};
+  ['breads','cakes','cookies','muffins','brownies','cupcakes'].forEach(group => {
+    const rows = document.getElementById('inv-'+group)?.querySelectorAll('tr') || [];
+    rows.forEach(row => {
+      const cells = row.querySelectorAll('td');
+      if(cells.length >= 4) {
+        const name = cells[0].textContent.trim();
+        invData[name+' Sold'] = cells[1].querySelector('input')?.value || '0';
+        invData[name+' Unsold'] = cells[2].querySelector('input')?.value || '0';
+        invData[name+' Spoilt'] = cells[3].querySelector('input')?.value || '0';
+      }
+    });
+  });
+
+  const shortageItems = [];
+  document.querySelectorAll('#shortage-list .cb-item.checked').forEach(el => {
+    const lbl = el.querySelector('.cb-label'); if(lbl) shortageItems.push(lbl.textContent.trim());
+    const txt = el.querySelector('input[type="text"]'); if(txt && txt.value) shortageItems.push(txt.value);
+  });
+
+  const orders = [];
+  document.querySelectorAll('#order-blocks .order-block').forEach(block => {
+    const sels = block.querySelectorAll('select');
+    const numIn = block.querySelector('input[type="number"]');
+    const txtIn = block.querySelector('input[type="text"]');
+    orders.push({ item: sels[0]?.value||'', qty: numIn?.value||'', reason: sels[1]?.value||'', channel: sels[2]?.value||'', notes: txtIn?.value||'' });
+  });
+
+  return {
+    timestamp: new Date().toISOString(),
+    location: locVal,
+    date: document.getElementById('f-date').value,
+    day: day ? day.textContent.trim() : '',
+    shift: shiftVal,
+    supervisor: document.querySelector('input[placeholder="Full name"]')?.value || '',
+    headcount: document.querySelector('input[placeholder="e.g. 6"]')?.value || '',
+    transactions: document.querySelector('input[placeholder="e.g. 142"]')?.value || '',
+    walkIns: document.querySelector('input[placeholder="e.g. 98"]')?.value || '',
+    bestSeller: document.getElementById('best-sel')?.value || '',
+    slowestSeller: document.getElementById('slow-sel')?.value || '',
+    ordersNotTaken: document.getElementById('orders-count')?.value || '0',
+    orderDetails: JSON.stringify(orders),
+    unsoldReason: document.querySelector('.chip.active[onclick*="unsold"]')?.textContent.trim() || '',
+    ingredientShortages: shortageItems.join(', '),
+    shortageNotes: document.querySelector('#shortage-sec textarea')?.value || '',
+    equipmentMalfunction: document.querySelector('#equip-sec').previousElementSibling?.querySelector('.toggle-btn.active')?.textContent.trim() || '',
+    equipmentDetails: document.querySelector('#equip-sec textarea')?.value || '',
+    safetyPassed: document.querySelector('input[placeholder="Complaints, compliments, unusual incidents\u2026"]')?.closest('.card-body')?.querySelector('.toggle-btn.active')?.textContent.trim() || '',
+    additionalNotes: document.querySelector('textarea[placeholder*="Complaints"]')?.value || '',
+    submittedBy: document.getElementById('f-submitter').value.trim(),
+    submissionTime: document.getElementById('f-time').value,
+    ...prodData,
+    ...invData
+  };
+}
+
 function submitForm() {
-  if (!document.getElementById('f-submitter').value.trim()) { alert('Please enter your name before submitting.'); return; }
-  document.getElementById('main-form').style.display='none';
-  document.getElementById('success-screen').classList.add('show');
-  window.scrollTo({top:0,behavior:'smooth'});
+  const submitter = document.getElementById('f-submitter').value.trim();
+  if (!submitter) { alert('Please enter your name before submitting.'); return; }
+
+  if (SHEET_URL === 'https://script.google.com/macros/s/AKfycbzBkWanK-K1IGy-lDR6VlxnqqoH-RmJepahtLvdJpQA2c72mOLuCZruvvELtQEJS7aAkA/exec') {
+    document.getElementById('main-form').style.display='none';
+    document.getElementById('success-screen').classList.add('show');
+    window.scrollTo({top:0,behavior:'smooth'});
+    return;
+  }
+
+  const btn = document.querySelector('.submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader"></i> Submitting…';
+
+  fetch(SHEET_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(collectData())
+  })
+  .then(() => {
+    document.getElementById('main-form').style.display='none';
+    document.getElementById('success-screen').classList.add('show');
+    window.scrollTo({top:0,behavior:'smooth'});
+  })
+  .catch(() => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-check"></i> Submit Report';
+    alert('Submission failed. Please check your internet and try again.');
+  });
 }
 function restartForm() {
   orderCount=0;
