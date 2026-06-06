@@ -377,20 +377,21 @@ function updateProgress() {
   document.getElementById('prog-fill').style.width = pct+'%';
   document.getElementById('prog-label').textContent = pct === 100 ? 'All required fields filled' : pct+'% of required fields complete';
 }
-const SHEET_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+const FORMSPREE_URL = 'https://formspree.io/f/mqeoejvy';
 
 function collectData() {
   const loc = document.querySelector('#loc-chips .chip.active');
   const locVal = loc ? (loc.textContent.trim() === 'Other' ? (document.querySelector('#loc-other input')||{value:''}).value : loc.textContent.trim()) : '';
   const day = document.querySelector('#day-chips .chip.active');
-  const shiftChips = document.querySelectorAll('.chip-group');
   let shiftVal = '';
-  shiftChips.forEach(grp => { const a = grp.querySelector('.chip.active'); if(a && ['Morning','Afternoon','Evening','Night'].includes(a.textContent.trim())) shiftVal = a.textContent.trim(); });
+  document.querySelectorAll('.chip-group').forEach(grp => {
+    const a = grp.querySelector('.chip.active');
+    if(a && ['Morning','Afternoon','Evening','Night'].includes(a.textContent.trim())) shiftVal = a.textContent.trim();
+  });
 
   const prodData = {};
   ['breads','cakes','cookies','muffins','brownies','cupcakes'].forEach(group => {
-    const rows = document.getElementById('prod-'+group)?.querySelectorAll('tr') || [];
-    rows.forEach(row => {
+    (document.getElementById('prod-'+group)?.querySelectorAll('tr') || []).forEach(row => {
       const cells = row.querySelectorAll('td');
       if(cells.length >= 3) {
         const name = cells[0].textContent.trim();
@@ -402,8 +403,7 @@ function collectData() {
 
   const invData = {};
   ['breads','cakes','cookies','muffins','brownies','cupcakes'].forEach(group => {
-    const rows = document.getElementById('inv-'+group)?.querySelectorAll('tr') || [];
-    rows.forEach(row => {
+    (document.getElementById('inv-'+group)?.querySelectorAll('tr') || []).forEach(row => {
       const cells = row.querySelectorAll('td');
       if(cells.length >= 4) {
         const name = cells[0].textContent.trim();
@@ -428,64 +428,86 @@ function collectData() {
     orders.push({ item: sels[0]?.value||'', qty: numIn?.value||'', reason: sels[1]?.value||'', channel: sels[2]?.value||'', notes: txtIn?.value||'' });
   });
 
+  const prod = Object.entries(prodData).map(([k,v]) => k+': '+v).join('\n');
+  const inv  = Object.entries(invData).map(([k,v]) => k+': '+v).join('\n');
+  const orderText = orders.length ? orders.map((o,i) => 'Order #'+(i+1)+': '+o.item+' x'+o.qty+' | Reason: '+o.reason+' | Channel: '+o.channel+(o.notes?' | Notes: '+o.notes:'')).join('\n') : 'None';
+
+  const loc2 = document.querySelector('#loc-chips .chip.active');
+  const locFinal = loc2 ? (loc2.textContent.trim()==='Other' ? (document.querySelector('#loc-other input')||{value:''}).value : loc2.textContent.trim()) : '';
+
+  const message =
+    '=== SHIFT & STAFF ===\n'+
+    'Location: '+locFinal+'\n'+
+    'Date: '+document.getElementById('f-date').value+'\n'+
+    'Day: '+(day?day.textContent.trim():'')+'\n'+
+    'Shift: '+shiftVal+'\n'+
+    'Supervisor: '+(document.querySelector('input[placeholder="Full name"]')?.value||'')+'\n'+
+    'Headcount: '+(document.querySelector('input[placeholder="e.g. 6"]')?.value||'')+'\n\n'+
+    '=== PRODUCTION ===\n'+prod+'\n\n'+
+    '=== SALES ===\n'+
+    'Transactions: '+(document.querySelector('input[placeholder="e.g. 142"]')?.value||'')+'\n'+
+    'Walk-ins: '+(document.querySelector('input[placeholder="e.g. 98"]')?.value||'')+'\n'+
+    'Best seller: '+(document.getElementById('best-sel')?.value||'')+'\n'+
+    'Slowest seller: '+(document.getElementById('slow-sel')?.value||'')+'\n\n'+
+    '=== ORDERS NOT TAKEN ===\n'+orderText+'\n\n'+
+    '=== INVENTORY ===\n'+inv+'\n\n'+
+    'Unsold reason: '+(document.querySelector('.chip.active[onclick*="unsold"]')?.textContent.trim()||'')+'\n\n'+
+    '=== INGREDIENT SHORTAGES ===\n'+
+    (shortageItems.length ? shortageItems.join(', ') : 'None')+'\n'+
+    'Notes: '+(document.querySelector('#shortage-sec textarea')?.value||'')+'\n\n'+
+    '=== EQUIPMENT & SAFETY ===\n'+
+    'Equipment malfunction: '+(document.querySelector('#equip-sec').previousElementSibling?.querySelector('.toggle-btn.active')?.textContent.trim()||'')+'\n'+
+    'Details: '+(document.querySelector('#equip-sec textarea')?.value||'')+'\n'+
+    'Safety checklist passed: '+(document.querySelector('textarea[placeholder*="Complaints"]')?.closest('.card-body')?.querySelector('.toggle-btn.active')?.textContent.trim()||'')+'\n'+
+    'Additional notes: '+(document.querySelector('textarea[placeholder*="Complaints"]')?.value||'')+'\n\n'+
+    '=== SUBMITTED BY ===\n'+
+    document.getElementById('f-submitter').value.trim()+' at '+document.getElementById('f-time').value;
+
   return {
-    timestamp: new Date().toISOString(),
-    location: locVal,
+    _subject: 'Bakery Report — '+locFinal+' | '+(day?day.textContent.trim():'')+' '+shiftVal+' shift | '+document.getElementById('f-date').value,
+    location: locFinal,
     date: document.getElementById('f-date').value,
     day: day ? day.textContent.trim() : '',
     shift: shiftVal,
-    supervisor: document.querySelector('input[placeholder="Full name"]')?.value || '',
-    headcount: document.querySelector('input[placeholder="e.g. 6"]')?.value || '',
-    transactions: document.querySelector('input[placeholder="e.g. 142"]')?.value || '',
-    walkIns: document.querySelector('input[placeholder="e.g. 98"]')?.value || '',
-    bestSeller: document.getElementById('best-sel')?.value || '',
-    slowestSeller: document.getElementById('slow-sel')?.value || '',
-    ordersNotTaken: document.getElementById('orders-count')?.value || '0',
-    orderDetails: JSON.stringify(orders),
-    unsoldReason: document.querySelector('.chip.active[onclick*="unsold"]')?.textContent.trim() || '',
-    ingredientShortages: shortageItems.join(', '),
-    shortageNotes: document.querySelector('#shortage-sec textarea')?.value || '',
-    equipmentMalfunction: document.querySelector('#equip-sec').previousElementSibling?.querySelector('.toggle-btn.active')?.textContent.trim() || '',
-    equipmentDetails: document.querySelector('#equip-sec textarea')?.value || '',
-    safetyPassed: document.querySelector('input[placeholder="Complaints, compliments, unusual incidents\u2026"]')?.closest('.card-body')?.querySelector('.toggle-btn.active')?.textContent.trim() || '',
-    additionalNotes: document.querySelector('textarea[placeholder*="Complaints"]')?.value || '',
-    submittedBy: document.getElementById('f-submitter').value.trim(),
-    submissionTime: document.getElementById('f-time').value,
-    ...prodData,
-    ...invData
+    submitted_by: document.getElementById('f-submitter').value.trim(),
+    submission_time: document.getElementById('f-time').value,
+    full_report: message
   };
 }
 
 function submitForm() {
   const submitter = document.getElementById('f-submitter').value.trim();
   if (!submitter) { alert('Please enter your name before submitting.'); return; }
+  if (!document.getElementById('f-date').value) { alert('Please select a date before submitting.'); return; }
 
-  if (SHEET_URL === 'https://script.google.com/macros/s/AKfycbzBkWanK-K1IGy-lDR6VlxnqqoH-RmJepahtLvdJpQA2c72mOLuCZruvvELtQEJS7aAkA/exec') {
-    document.getElementById('main-form').style.display='none';
-    document.getElementById('success-screen').classList.add('show');
-    window.scrollTo({top:0,behavior:'smooth'});
+  if (FORMSPREE_URL === 'YOUR_FORMSPREE_URL_HERE') {
+    alert('Setup needed: Replace YOUR_FORMSPREE_URL_HERE with your Formspree endpoint. See setup instructions.');
     return;
   }
 
   const btn = document.querySelector('.submit-btn');
   btn.disabled = true;
-  btn.innerHTML = '<i class="ti ti-loader"></i> Submitting…';
+  btn.innerHTML = '<i class="ti ti-loader"></i> Sending…';
 
-  fetch(SHEET_URL, {
+  fetch(FORMSPREE_URL, {
     method: 'POST',
-    mode: 'no-cors',
-    headers: {'Content-Type': 'application/json'},
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
     body: JSON.stringify(collectData())
   })
-  .then(() => {
-    document.getElementById('main-form').style.display='none';
-    document.getElementById('success-screen').classList.add('show');
-    window.scrollTo({top:0,behavior:'smooth'});
+  .then(res => res.json())
+  .then(data => {
+    if (data.ok || data.next) {
+      document.getElementById('main-form').style.display='none';
+      document.getElementById('success-screen').classList.add('show');
+      window.scrollTo({top:0,behavior:'smooth'});
+    } else {
+      throw new Error('Formspree error');
+    }
   })
   .catch(() => {
     btn.disabled = false;
     btn.innerHTML = '<i class="ti ti-check"></i> Submit Report';
-    alert('Submission failed. Please check your internet and try again.');
+    alert('Submission failed. Please check your internet connection and try again.');
   });
 }
 function restartForm() {
