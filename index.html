@@ -120,18 +120,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
         </div>
         <div id="loc-other" style="display:none;margin-top:8px"><input type="text" placeholder="Enter location name…" /></div>
       </div>
-      <div class="grid-2">
-        <div class="field"><label>Date *</label><input type="date" id="f-date" oninput="updateProgress()" /></div>
-        <div class="field">
-          <label>Shift *</label>
-          <div class="chip-group">
-            <button type="button" class="chip" onclick="pickChip(this,'shift')">Morning</button>
-            <button type="button" class="chip" onclick="pickChip(this,'shift')">Afternoon</button>
-            <button type="button" class="chip" onclick="pickChip(this,'shift')">Evening</button>
-            <button type="button" class="chip" onclick="pickChip(this,'shift')">Night</button>
-          </div>
-        </div>
-      </div>
+      <div class="field"><label>Date *</label><input type="date" id="f-date" oninput="updateProgress()" /></div>
       <div class="field">
         <label>Day *</label>
         <div class="chip-group" id="day-chips">
@@ -227,15 +216,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       </div>
       <div class="field">
         <label>Ingredient Shortages for Tomorrow?</label>
-        <div class="toggle-row">
-          <button type="button" class="toggle-btn" onclick="pickToggle(this,'syn');document.getElementById('shortage-sec').classList.add('show')">Yes</button>
-          <button type="button" class="toggle-btn" onclick="pickToggle(this,'syn');document.getElementById('shortage-sec').classList.remove('show')">No</button>
-        </div>
-      </div>
-      <div class="cond" id="shortage-sec">
         <div class="cb-list" id="shortage-list"></div>
-        <button type="button" class="add-btn" onclick="addIngredient()"><i class="ti ti-plus"></i> Add another ingredient</button>
-        <div class="field"><label>Shortage Notes</label><textarea placeholder="Quantities needed, urgency, supplier info…"></textarea></div>
+        <button type="button" class="add-btn" onclick="addIngredient()" style="margin-top:8px"><i class="ti ti-plus"></i> Add another ingredient</button>
+        <div class="field" style="margin-top:12px"><label>Shortage Notes &amp; Details</label><textarea id="shortage-notes" placeholder="List any shortages, quantities needed, urgency, supplier info, or anything else the next shift should know…" style="min-height:100px"></textarea></div>
       </div>
     </div>
   </div>
@@ -383,11 +366,7 @@ function collectData() {
   const loc = document.querySelector('#loc-chips .chip.active');
   const locVal = loc ? (loc.textContent.trim() === 'Other' ? (document.querySelector('#loc-other input')||{value:''}).value : loc.textContent.trim()) : '';
   const day = document.querySelector('#day-chips .chip.active');
-  let shiftVal = '';
-  document.querySelectorAll('.chip-group').forEach(grp => {
-    const a = grp.querySelector('.chip.active');
-    if(a && ['Morning','Afternoon','Evening','Night'].includes(a.textContent.trim())) shiftVal = a.textContent.trim();
-  });
+
 
   const prodData = {};
   ['breads','cakes','cookies','muffins','brownies','cupcakes'].forEach(group => {
@@ -440,7 +419,7 @@ function collectData() {
     'Location: '+locFinal+'\n'+
     'Date: '+document.getElementById('f-date').value+'\n'+
     'Day: '+(day?day.textContent.trim():'')+'\n'+
-    'Shift: '+shiftVal+'\n'+
+
     'Supervisor: '+(document.querySelector('input[placeholder="Full name"]')?.value||'')+'\n'+
     'Headcount: '+(document.querySelector('input[placeholder="e.g. 6"]')?.value||'')+'\n\n'+
     '=== PRODUCTION ===\n'+prod+'\n\n'+
@@ -454,7 +433,7 @@ function collectData() {
     'Unsold reason: '+(document.querySelector('.chip.active[onclick*="unsold"]')?.textContent.trim()||'')+'\n\n'+
     '=== INGREDIENT SHORTAGES ===\n'+
     (shortageItems.length ? shortageItems.join(', ') : 'None')+'\n'+
-    'Notes: '+(document.querySelector('#shortage-sec textarea')?.value||'')+'\n\n'+
+    'Notes: '+(document.getElementById('shortage-notes')?.value||'')+'\n\n'+
     '=== EQUIPMENT & SAFETY ===\n'+
     'Equipment malfunction: '+(document.querySelector('#equip-sec').previousElementSibling?.querySelector('.toggle-btn.active')?.textContent.trim()||'')+'\n'+
     'Details: '+(document.querySelector('#equip-sec textarea')?.value||'')+'\n'+
@@ -464,11 +443,11 @@ function collectData() {
     document.getElementById('f-submitter').value.trim()+' at '+document.getElementById('f-time').value;
 
   return {
-    _subject: 'Bakery Report — '+locFinal+' | '+(day?day.textContent.trim():'')+' '+shiftVal+' shift | '+document.getElementById('f-date').value,
+    _subject: 'Bakery Report — '+locFinal+' | '+(day?day.textContent.trim():'')+' | '+document.getElementById('f-date').value,
     location: locFinal,
     date: document.getElementById('f-date').value,
     day: day ? day.textContent.trim() : '',
-    shift: shiftVal,
+
     submitted_by: document.getElementById('f-submitter').value.trim(),
     submission_time: document.getElementById('f-time').value,
     full_report: message
